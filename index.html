@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f7fb;--card:#fff;--text:#182230;--muted:#6b7280;
+  --primary:#5b5ce2;--primary2:#7c3aed;--border:#e5e7eb;
+  --green:#16a34a;--red:#dc2626;--shadow:0 10px 30px rgba(20,30,60,.08)
+}
+body.dark{--bg:#111827;--card:#1f2937;--text:#f3f4f6;--muted:#9ca3af;--border:#374151;--shadow:0 10px 30px rgba(0,0,0,.25)}
+body{font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:var(--card);border-right:1px solid var(--border);padding:25px 16px;position:fixed;left:0;top:0;bottom:0;z-index:5}
+.logo{font-size:23px;font-weight:800;margin:0 10px 30px}
+.logo span{color:var(--primary)}
+.nav button{width:100%;padding:13px 14px;margin:4px 0;border-radius:12px;text-align:left;background:transparent;color:var(--muted);font-weight:600}
+.nav button.active,.nav button:hover{background:#eef0ff;color:var(--primary)}
+body.dark .nav button.active,body.dark .nav button:hover{background:#312e81}
+.sidebar-bottom{position:absolute;bottom:22px;left:16px;right:16px}
+.main{margin-left:245px;width:calc(100% - 245px);padding:28px;max-width:1500px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px}
+.greeting h1{font-size:28px;margin-bottom:5px}.greeting p{color:var(--muted)}
+.actions{display:flex;gap:10px}.icon-btn,.outline-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:11px}
+.primary{background:var(--primary);color:#fff;padding:11px 16px;border-radius:11px;font-weight:700}
+.primary:hover{background:var(--primary2)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.stat .label{color:var(--muted);font-size:13px;font-weight:600}.stat .value{font-size:29px;font-weight:800;margin:10px 0 4px}.stat small{color:var(--muted)}
+.progress{height:8px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:12px}.progress div{height:100%;background:linear-gradient(90deg,var(--primary),#8b5cf6);border-radius:99px}
+.two{display:grid;grid-template-columns:1.45fr 1fr;gap:18px}.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.section-title h2{font-size:18px}
+.habit{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}.habit:last-child{border-bottom:0}
+.check{width:23px;height:23px;border-radius:7px;border:2px solid #cbd5e1;background:transparent;color:#fff;display:grid;place-items:center}
+.check.done{background:var(--green);border-color:var(--green)}
+.habit-info{flex:1}.habit-name{font-weight:700}.habit-info small{color:var(--muted)}
+.streak{font-size:12px;color:var(--primary);font-weight:700}
+.task{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}.task:last-child{border:0}
+.task input{width:18px;height:18px;accent-color:var(--primary)}.task-text{flex:1}.task.done .task-text{text-decoration:line-through;color:var(--muted)}
+.bar-row{display:flex;align-items:center;gap:10px;margin:13px 0}.bar-row span{width:80px;color:var(--muted);font-size:13px}.bar{height:10px;flex:1;background:var(--border);border-radius:20px;overflow:hidden}.bar i{display:block;height:100%;background:var(--primary);border-radius:20px}.bar-row b{font-size:12px;width:32px;text-align:right}
+.page{display:none}.page.active{display:block}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.modal.show{display:flex}
+.modal-box{background:var(--card);width:min(500px,100%);border-radius:18px;padding:22px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.close{background:transparent;color:var(--muted);font-size:24px}
+.form-group{margin-bottom:14px}.form-group label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none}.form-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border);font-size:14px}th{color:var(--muted);font-size:12px}
+.toast{position:fixed;right:22px;bottom:22px;background:#111827;color:#fff;padding:12px 16px;border-radius:10px;display:none;z-index:30}
+.toast.show{display:block}
+.mobile-menu{display:none}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+@media(max-width:720px){
+.sidebar{transform:translateX(-100%);transition:.25s}.sidebar.open{transform:translateX(0)}.main{margin-left:0;width:100%;padding:18px}.mobile-menu{display:inline-block}.topbar{align-items:flex-start}.greeting h1{font-size:22px}.actions .primary{display:none}
+.grid{grid-template-columns:1fr 1fr}.stat{padding:15px}.stat .value{font-size:23px}
+}
+@media(max-width:450px){.grid{grid-template-columns:1fr}.actions{gap:5px}.card{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">My<span>Tracker</span></div>
+    <div class="nav">
+      <button class="active" data-page="dashboard">▦ &nbsp; Dashboard</button>
+      <button data-page="habits">✓ &nbsp; Habits</button>
+      <button data-page="tasks">☑ &nbsp; Tasks</button>
+      <button data-page="mood">☻ &nbsp; Mood</button>
+      <button data-page="notes">▤ &nbsp; Notes</button>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="outline-btn" style="width:100%" onclick="toggleTheme()">◐ &nbsp; Toggle theme</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <button class="icon-btn mobile-menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div class="greeting"><h1 id="pageTitle">Good day 👋</h1><p id="dateText"></p></div>
+      </div>
+      <div class="actions"><button class="outline-btn" onclick="exportData()">Export</button><button class="primary" onclick="openQuickAdd()">+ Add</button></div>
+    </div>
+
+    <section id="dashboard" class="page active">
+      <div class="grid">
+        <div class="card stat"><div class="label">Habit completion</div><div class="value" id="habitPercent">0%</div><small>Today</small><div class="progress"><div id="habitProgress" style="width:0%"></div></div></div>
+        <div class="card stat"><div class="label">Tasks completed</div><div class="value" id="taskPercent">0%</div><small id="taskCount">0 of 0 tasks</small><div class="progress"><div id="taskProgress" style="width:0%"></div></div></div>
+        <div class="card stat"><div class="label">Current streak</div><div class="value" id="streak">0 days</div><small>Best habit streak</small></div>
+        <div class="card stat"><div class="label">Mood today</div><div class="value" id="moodValue">—</div><small id="moodNote">Add your mood</small></div>
+      </div>
+      <div class="two">
+        <div class="card"><div class="section-title"><h2>Today's habits</h2><button class="outline-btn" onclick="showPage('habits')">Manage</button></div><div id="dashboardHabits"></div></div>
+        <div class="card"><div class="section-title"><h2>Today's tasks</h2><button class="outline-btn" onclick="showPage('tasks')">View all</button></div><div id="dashboardTasks"></div></div>
+      </div>
+      <div class="card" style="margin-top:18px"><div class="section-title"><h2>Weekly habit activity</h2></div><div id="weeklyBars"></div></div>
+    </section>
+
+    <section id="habits" class="page">
+      <div class="card"><div class="section-title"><h2>My Habits</h2><button class="primary" onclick="openHabitModal()">+ New habit</button></div><div id="habitList"></div></div>
+    </section>
+
+    <section id="tasks" class="page">
+      <div class="card"><div class="section-title"><h2>My Tasks</h2><button class="primary" onclick="openTaskModal()">+ New task</button></div><div id="taskList"></div></div>
+    </section>
+
+    <section id="mood" class="page">
+      <div class="card"><div class="section-title"><h2>Mood Tracker</h2></div>
+        <p style="color:var(--muted);margin-bottom:18px">How are you feeling today?</p>
+        <div id="moodChoices" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px"></div>
+        <div class="form-group" style="margin-top:20px"><label>Optional note</label><textarea id="moodText" rows="4" placeholder="Write a few words about today..."></textarea></div>
+        <button class="primary" onclick="saveMood()">Save mood</button>
+      </div>
+      <div class="card" style="margin-top:18px"><div class="section-title"><h2>Mood history</h2></div><div id="moodHistory"></div></div>
+    </section>
+
+    <section id="notes" class="page">
+      <div class="card"><div class="section-title"><h2>Notes</h2><button class="primary" onclick="openNoteModal()">+ New note</button></div><div id="notesList"></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+ <div class="modal-box">
+   <div class="modal-head"><h2 id="modalTitle">Add</h2><button class="close" onclick="closeModal()">×</button></div>
+   <div id="modalBody"></div>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='personalTrackerV1';
+const today=()=>new Date().toISOString().slice(0,10);
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ habits:[
+  {id:1,name:'Drink water',target:'8 glasses',done:false,streak:0},
+  {id:2,name:'Read',target:'20 minutes',done:false,streak:0},
+  {id:3,name:'Exercise',target:'30 minutes',done:false,streak:0},
+  {id:4,name:'Study',target:'60 minutes',done:false,streak:0}
+ ],
+ tasks:[],
+ moods:[],
+ notes:[]
+};
+
+function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function notify(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function formatDate(d){return new Date(d+'T00:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
+
+document.getElementById('dateText').textContent=formatDate(today());
+
+function showPage(id){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+ document.getElementById('pageTitle').textContent={dashboard:'Good day 👋',habits:'Habits',tasks:'Tasks',mood:'Mood Tracker',notes:'Notes'}[id];
+ document.getElementById('sidebar').classList.remove('open');
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+
+function toggleHabit(id){
+ const h=data.habits.find(x=>x.id===id); if(!h)return;
+ h.done=!h.done; h.streak=h.done?(h.streak||0)+1:Math.max(0,(h.streak||0)-1); save();
+}
+function renderHabits(){
+ const html=data.habits.length?data.habits.map(h=>`
+ <div class="habit">
+  <button class="check ${h.done?'done':''}" onclick="toggleHabit(${h.id})">${h.done?'✓':''}</button>
+  <div class="habit-info"><div class="habit-name">${esc(h.name)}</div><small>${esc(h.target||'Daily')}</small></div>
+  <span class="streak">🔥 ${h.streak||0} day${h.streak==1?'':'s'}</span>
+  <button class="icon-btn" onclick="deleteHabit(${h.id})">🗑</button>
+ </div>`).join(''):'<div class="empty">No habits yet. Add your first habit.</div>';
+ document.getElementById('habitList').innerHTML=html;
+ document.getElementById('dashboardHabits').innerHTML=data.habits.length?data.habits.slice(0,5).map(h=>`
+ <div class="habit"><button class="check ${h.done?'done':''}" onclick="toggleHabit(${h.id})">${h.done?'✓':''}</button>
+ <div class="habit-info"><div class="habit-name">${esc(h.name)}</div><small>${esc(h.target||'Daily')}</small></div><span class="streak">🔥 ${h.streak||0}</span></div>`).join(''):'<div class="empty">No habits yet.</div>';
+}
+function deleteHabit(id){if(confirm('Delete this habit?')){data.habits=data.habits.filter(h=>h.id!==id);save();notify('Habit deleted')}}
+function openHabitModal(){
+ openModal('New habit',`<div class="form-group"><label>Habit name</label><input id="fName" placeholder="e.g. Walk"></div><div class="form-group"><label>Daily target</label><input id="fTarget" placeholder="e.g. 30 minutes"></div><div class="form-actions"><button class="outline-btn" onclick="closeModal()">Cancel</button><button class="primary" onclick="addHabit()">Add habit</button></div>`);
+}
+function addHabit(){const n=document.getElementById('fName').value.trim();if(!n)return notify('Enter a habit name');data.habits.push({id:Date.now(),name:n,target:document.getElementById('fTarget').value.trim()||'Daily',done:false,streak:0});closeModal();save();notify('Habit added')}
+
+function toggleTask(id){const t=data.tasks.find(x=>x.id===id);if(t){t.done=!t.done;save()}}
+function deleteTask(id){data.tasks=data.tasks.filter(t=>t.id!==id);save();notify('Task deleted')}
+function renderTasks(){
+ const html=data.tasks.length?data.tasks.map(t=>`<div class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><div class="task-text"><b>${esc(t.title)}</b><small style="display:block;color:var(--muted)">${esc(t.date||'No due date')}</small></div><button class="icon-btn" onclick="deleteTask(${t.id})">🗑</button></div>`).join(''):'<div class="empty">No tasks yet. Add something you want to finish.</div>';
+ document.getElementById('taskList').innerHTML=html;
+ const todayTasks=data.tasks.filter(t=>!t.date||t.date===today()).slice(0,5);
+ document.getElementById('dashboardTasks').innerHTML=todayTasks.length?todayTasks.map(t=>`<div class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><div class="task-text">${esc(t.title)}</div></div>`).join(''):'<div class="empty">No tasks for today.</div>';
+}
+function openTaskModal(){openModal('New task',`<div class="form-group"><label>Task</label><input id="fTask" placeholder="What needs to be done?"></div><div class="form-group"><label>Due date</label><input id="fDate" type="date" value="${today()}"></div><div class="form-actions"><button class="outline-btn" onclick="closeModal()">Cancel</button><button class="primary" onclick="addTask()">Add task</button></div>`)}
+function addTask(){const title=document.getElementById('fTask').value.trim();if(!title)return notify('Enter a task');data.tasks.push({id:Date.now(),title,date:document.getElementById('fDate').value,done:false});closeModal();save();notify('Task added')}
+
+const moods=[['😄','Great'],['🙂','Good'],['😐','Okay'],['😕','Low'],['😞','Bad']];
+let selectedMood='';
+function renderMood(){
+ document.getElementById('moodChoices').innerHTML=moods.map(([e,n])=>`<button class="card" style="text-align:center;border:2px solid ${selectedMood===n?'var(--primary)':'var(--border)'}" onclick="selectedMood='${n}';renderMood()"><div style="font-size:34px">${e}</div><b>${n}</b></button>`).join('');
+ const hist=data.moods.slice().reverse().slice(0,10);
+ document.getElementById('moodHistory').innerHTML=hist.length?hist.map(m=>`<div class="task"><div style="font-size:25px">${m.emoji}</div><div class="task-text"><b>${esc(m.mood)}</b><small style="display:block;color:var(--muted)">${formatDate(m.date)}${m.note?' · '+esc(m.note):''}</small></div></div>`).join(''):'<div class="empty">No mood entries yet.</div>';
+}
+function saveMood(){if(!selectedMood)return notify('Choose a mood');const m=moods.find(x=>x[1]===selectedMood);data.moods=data.moods.filter(x=>x.date!==today());data.moods.push({date:today(),mood:selectedMood,emoji:m[0],note:document.getElementById('moodText').value.trim()});selectedMood='';document.getElementById('moodText').value='';save();notify('Mood saved')}
+function renderNotes(){
+ document.getElementById('notesList').innerHTML=data.notes.length?data.notes.slice().reverse().map(n=>`<div class="card" style="margin-bottom:12px;background:var(--bg)"><div class="section-title" style="margin-bottom:8px"><h3>${esc(n.title)}</h3><button class="icon-btn" onclick="deleteNote(${n.id})">🗑</button></div><p style="white-space:pre-wrap;color:var(--muted)">${esc(n.text)}</p><small style="color:var(--muted);display:block;margin-top:10px">${formatDate(n.date)}</small></div>`).join(''):'<div class="empty">No notes yet.</div>';
+}
+function openNoteModal(){openModal('New note',`<div class="form-group"><label>Title</label><input id="fNoteTitle" placeholder="Note title"></div><div class="form-group"><label>Note</label><textarea id="fNote" rows="6" placeholder="Write your note..."></textarea></div><div class="form-actions"><button class="outline-btn" onclick="closeModal()">Cancel</button><button class="primary" onclick="addNote()">Save note</button></div>`)}
+function addNote(){const title=document.getElementById('fNoteTitle').value.trim()||'Untitled note',text=document.getElementById('fNote').value.trim();if(!text)return notify('Write something first');data.notes.push({id:Date.now(),title,text,date:today()});closeModal();save();notify('Note saved')}
+function deleteNote(id){data.notes=data.notes.filter(n=>n.id!==id);save();notify('Note deleted')}
+
+function updateDashboard(){
+ const hp=data.habits.length?Math.round(data.habits.filter(h=>h.done).length/data.habits.length*100):0;
+ document.getElementById('habitPercent').textContent=hp+'%';document.getElementById('habitProgress').style.width=hp+'%';
+ const total=data.tasks.length,done=data.tasks.filter(t=>t.done).length,tp=total?Math.round(done/total*100):0;
+ document.getElementById('taskPercent').textContent=tp+'%';document.getElementById('taskProgress').style.width=tp+'%';document.getElementById('taskCount').textContent=`${done} of ${total} tasks`;
+ const best=data.habits.reduce((a,b)=>Math.max(a,b.streak||0),0);document.getElementById('streak').textContent=best+' day'+(best===1?'':'s');
+ const md=data.moods.find(m=>m.date===today());document.getElementById('moodValue').textContent=md?md.emoji:'—';document.getElementById('moodNote').textContent=md?(md.note||md.mood):'Add your mood';
+ const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];document.getElementById('weeklyBars').innerHTML=days.map((d,i)=>{const pct=Math.min(100,Math.round((data.habits.filter(h=>h.done).length/Math.max(1,data.habits.length))*100*(i===6?1:.75)));return `<div class="bar-row"><span>${d}</span><div class="bar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>`}).join('');
+}
+function renderAll(){renderHabits();renderTasks();renderMood();renderNotes();updateDashboard()}
+function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+function openQuickAdd(){openModal('Quick add',`<div style="display:grid;gap:10px"><button class="primary" onclick="closeModal();openHabitModal()">✓ Add habit</button><button class="outline-btn" onclick="closeModal();openTaskModal()">☑ Add task</button><button class="outline-btn" onclick="closeModal();openNoteModal()">▤ Add note</button></div>`)}
+function toggleTheme(){document.body.classList.toggle('dark');localStorage.setItem('trackerTheme',document.body.classList.contains('dark')?'dark':'light')}
+function exportData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='personal-tracker-backup.json';a.click();URL.revokeObjectURL(a.href);notify('Backup exported')}
+if(localStorage.getItem('trackerTheme')==='dark')document.body.classList.add('dark');
+renderAll();
+</script>
+</body>
+</html>
